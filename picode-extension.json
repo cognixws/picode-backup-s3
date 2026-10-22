@@ -1,0 +1,20 @@
+{
+  "id": "picode-backup-s3",
+  "name": "S3-compatible storage",
+  "version": "0.1.0",
+  "apiVersion": 14,
+  "publisher": "COGNIX[WS]",
+  "description": "Keeps encrypted copies of your COGNIX[WS] backups in an S3 bucket: Cloudflare R2, Backblaze B2, Wasabi, MinIO, AWS S3 or any S3-compatible storage. COGNIX[WS] encrypts everything before it leaves this computer; the storage never sees what is inside.",
+  "activation": { "instance": true },
+  "settings": [
+    { "key": "endpoint", "label": "Storage address", "type": "text", "required": true, "description": "The S3 address of your storage. Cloudflare R2: https://<account id>.r2.cloudflarestorage.com. Backblaze B2: https://s3.<region>.backblazeb2.com. AWS: https://s3.<region>.amazonaws.com. Plain http only for this computer or your home network." },
+    { "key": "bucket", "label": "Bucket", "type": "text", "required": true, "description": "An existing bucket, used only for these copies." },
+    { "key": "region", "label": "Region", "type": "text", "default": "auto", "description": "auto for Cloudflare R2; the bucket's region elsewhere, like us-east-1 or eu-central-003." },
+    { "key": "prefix", "label": "Folder in the bucket", "type": "text", "description": "Optional. Copies go under this folder instead of the bucket's top." },
+    { "key": "access_key_id", "label": "Access key ID", "type": "secret", "required": true, "description": "From your storage's API keys. Give the key read and write access to this bucket only. Stored protected on this computer." },
+    { "key": "secret_access_key", "label": "Secret access key", "type": "secret", "required": true, "description": "Shown once when you create the key. Stored protected on this computer." },
+    { "key": "never_delete", "label": "Never delete here", "type": "boolean", "default": false, "description": "Keep every copy in this bucket even when a destination allows deleting old copies. Choose this when the key cannot delete, or the bucket's own rules remove old files." }
+  ],
+  "process": { "command": "node", "args": ["${extensionDir}/server.mjs"], "settingsCheck": "/settings/check" },
+  "backup": { "name": "S3-compatible storage", "where": "internet", "repositoryPath": "/repo", "statusPath": "/status" }
+}

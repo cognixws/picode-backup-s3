@@ -1,0 +1,25 @@
+name: test
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Start an S3 server (SeaweedFS)
+        run: |
+          echo '{"identities":[{"name":"admin","credentials":[{"accessKey":"testkey","secretKey":"testsecret"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' > /tmp/s3.json
+          docker run -d --name s3 -p 8333:8333 -v /tmp/s3.json:/etc/s3.json:ro chrislusf/seaweedfs server -s3 -s3.config=/etc/s3.json
+          for i in $(seq 60); do curl -s -o /dev/null http://127.0.0.1:8333 && break; sleep 1; done
+          curl -s -X PUT http://127.0.0.1:8333/backups -o /dev/null --aws-sigv4 "aws:amz:us-east-1:s3" --user testkey:testsecret
+      - name: Unit tests and the conformance kit
+        env:
+          S3_TEST_ENDPOINT: http://127.0.0.1:8333
+          S3_TEST_BUCKET: backups
+          S3_TEST_KEY: testkey
+          S3_TEST_SECRET: testsecret
+        run: node --test test/*.test.mjs
